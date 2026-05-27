@@ -32,8 +32,9 @@ class Relatorio(QWidget):
         self.campo_faturamento = QLineEdit()
         self.campo_faturamento.setReadOnly(True)
         self.tabela = QTableWidget()
-        self.tabela.setColumnCount(6)
-        self.tabela.setHorizontalHeaderLabels(["ID","Cliente", "Joia","Quantidade", "Total", "Pagamento"])
+        self.tabela.setColumnCount(7)
+        self.tabela.setHorizontalHeaderLabels(["ID", "Cliente", "Joia", "Quantidade", "Total", "Pagamento", "Data"])
+        self.tabela.setColumnHidden(0, True)
 
         self.filtrar.clicked.connect(self.filtrar_vendas)
 
@@ -87,7 +88,7 @@ class Relatorio(QWidget):
     def filtrar_vendas(self):
         query = """
         SELECT v.id, c.nome as nome_cliente, j.nome as nome_joia, 
-            v.quantidade, v.valor_total, v.pagamento
+            v.quantidade, v.valor_total, v.pagamento, v.data_venda
         FROM vendas v
         JOIN clientes c ON c.id = v.cliente_id
         JOIN joias j ON j.id = v.joia_id
@@ -136,8 +137,10 @@ class Relatorio(QWidget):
             self.tabela.setItem(i, 1, QTableWidgetItem(venda["nome_cliente"]))
             self.tabela.setItem(i, 2, QTableWidgetItem(venda["nome_joia"]))
             self.tabela.setItem(i, 3, QTableWidgetItem(str(venda["quantidade"])))
-            self.tabela.setItem(i, 4, QTableWidgetItem(str(venda["valor_total"])))
+            self.tabela.setItem(i, 4, QTableWidgetItem(f"R$ {venda['valor_total']:.2f}"))
             self.tabela.setItem(i, 5, QTableWidgetItem(str(venda["pagamento"])))
+            data_formatada = datetime.strptime(venda["data_venda"], "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y %H:%M")
+            self.tabela.setItem(i, 6, QTableWidgetItem(data_formatada))
         
         conn.close()
 

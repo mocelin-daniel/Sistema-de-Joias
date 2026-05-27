@@ -26,6 +26,7 @@ class Clientes(QWidget):
         self.tabela = QTableWidget()
         self.tabela.setColumnCount(6)
         self.tabela.setHorizontalHeaderLabels(["ID", "Nome", "CPF", "Número", "Email", "Endereço"])
+        self.tabela.setColumnHidden(0, True)
         self.id_editando = None
         self.tabela.cellClicked.connect(self.selecionar_cliente)
 

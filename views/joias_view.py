@@ -27,6 +27,7 @@ class Joias(QWidget):
         self.tabela = QTableWidget()
         self.tabela.setColumnCount(6)
         self.tabela.setHorizontalHeaderLabels(["ID", "Nome", "Tipo", "Material", "Quantidade", "Valor"])
+        self.tabela.setColumnHidden(0, True)
         self.id_editando = None
         self.tabela.cellClicked.connect(self.selecionar_joia)
 
@@ -133,7 +134,7 @@ class Joias(QWidget):
             self.tabela.setItem(i, 2, QTableWidgetItem(joia["tipo"]))
             self.tabela.setItem(i, 3, QTableWidgetItem(joia["material"]))
             self.tabela.setItem(i, 4, QTableWidgetItem(str(joia["quantidade"])))
-            self.tabela.setItem(i, 5, QTableWidgetItem(str(joia["valor"])))
+            self.tabela.setItem(i, 5, QTableWidgetItem(f"R$ {joia['valor']:.2f}"))
 
     def excluir_joia(self):
         linha = self.tabela.currentRow()
@@ -177,7 +178,8 @@ class Joias(QWidget):
         self.campo_tipo.setText(self.tabela.item(linha, 2).text())
         self.campo_material.setCurrentText(self.tabela.item(linha, 3).text())
         self.campo_quantidade.setText(self.tabela.item(linha, 4).text())
-        self.campo_valor.setText(self.tabela.item(linha, 5).text())
+        valor = self.tabela.item(linha, 5).text().replace("R$ ", "")
+        self.campo_valor.setText(valor)
         self.id_editando = self.tabela.item(linha, 0).text()
     
     def atualizar(self):
