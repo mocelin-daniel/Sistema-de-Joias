@@ -117,10 +117,15 @@ class Vendas(QWidget):
         if not quantidade or not id_cliente or not id_joia:
             QMessageBox.warning(self, "Atenção", "Preencha todos os campos!")
             return
+        
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT quantidade FROM joias WHERE id = ?", (id_joia,))
         joia = cursor.fetchone()
+
+        if int(quantidade) <= 0:
+            QMessageBox.warning(self, "Atenção", "Quantidade deve ser maior que zero!")
+            return
 
         if int(quantidade) > joia["quantidade"]:
             QMessageBox.warning(self, "Atenção", "Estoque insuficiente!")

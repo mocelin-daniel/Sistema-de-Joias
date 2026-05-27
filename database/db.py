@@ -28,7 +28,7 @@ def criar_tabelas():
     CREATE TABLE IF NOT EXISTS clientes (
         id        INTEGER PRIMARY KEY AUTOINCREMENT,
         nome      TEXT NOT NULL,
-        cpf       TEXT NOT NULL,
+        cpf       TEXT NOT NULL UNIQUE,
         numero  TEXT NOT NULL,
         email     TEXT NOT NULL,
         endereco  TEXT NOT NULL
@@ -42,10 +42,12 @@ def criar_tabelas():
         valor_joia       REAL NOT NULL,
         quantidade INTEGER NOT NULL DEFAULT 0,
         valor_total     REAL NOT NULL,
+        data_venda TEXT DEFAULT (datetime('now', 'localtime')),
         pagamento TEXT, -- futuramente criar opção "debito, credito, pix, dinheiro,
         FOREIGN KEY (cliente_id) REFERENCES clientes(id),
         FOREIGN KEY (joia_id) REFERENCES joias(id)
     )
 """)
+    
     conn.commit()
     conn.close()

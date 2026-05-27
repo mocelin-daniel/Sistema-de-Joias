@@ -4,12 +4,20 @@ from views.clientes_view import Clientes
 from views.joias_view import Joias
 from views.relatorio_view import Relatorio
 from views.vendas_view import Vendas
+from PyQt6.QtGui import QPixmap
+from PyQt6.QtCore import Qt
 
 class MainWindow(QMainWindow): #cria a classe da janela principal, com todos seus botões e layout
     def __init__(self):
         super().__init__()
+        layout_sidebar = QVBoxLayout()
         self.setFixedSize(800,600)
+        logo = QLabel()
+        pixmap = QPixmap("images/logo.png")
+        logo.setPixmap(pixmap.scaled(150, 150, Qt.AspectRatioMode.KeepAspectRatio))
+        logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.label_sidebar = QLabel("Menu")
+        self.label_sidebar.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.pushbutton_clientes = QPushButton("Cadastrar Clientes") 
         self.pushbutton_joias = QPushButton("Cadastrar Joias")
         self.pushbutton_vendas = QPushButton("Registrar Vendas")
@@ -18,12 +26,13 @@ class MainWindow(QMainWindow): #cria a classe da janela principal, com todos seu
         layout_principal = QHBoxLayout()
         widget_principal = QWidget()
         widget_sidebar = QWidget()
-        layout_sidebar = QVBoxLayout()
         layout_sidebar.addWidget(self.label_sidebar)
         layout_sidebar.addWidget(self.pushbutton_clientes)
         layout_sidebar.addWidget(self.pushbutton_joias)
         layout_sidebar.addWidget(self.pushbutton_vendas)
         layout_sidebar.addWidget(self.pushbutton_relatorio)
+        layout_sidebar.addStretch()
+        layout_sidebar.addWidget(logo)
         widget_sidebar.setLayout(layout_sidebar)
      
         self.stack = QStackedWidget()
