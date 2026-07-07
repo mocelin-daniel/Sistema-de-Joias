@@ -4,12 +4,13 @@ from views.main_window import MainWindow
 from database.db import criar_tabelas
 from PyQt6.QtGui import QIcon
 import os
+import qdarktheme
 
 criar_tabelas()
 
 app = QApplication(sys.argv)
 janela = MainWindow()
-janela.setWindowTitle("Carmem Jóias")
+janela.setWindowTitle("Carmem Joias")
 icone_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "images", "crop_icon.ico")
 app.setWindowIcon(QIcon(icone_path))
 janela.setWindowIcon(QIcon(icone_path)) 

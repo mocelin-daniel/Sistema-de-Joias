@@ -48,6 +48,28 @@ def criar_tabelas():
         FOREIGN KEY (joia_id) REFERENCES joias(id)
     )
 """)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS tipos (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    tipo        TEXT NOT NULL UNIQUE
+    )
+""")
     
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS material (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    material    TEXT NOT NULL UNIQUE   
+    )
+""")
+    
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS configs (
+            id INTEGER PRIMARY KEY,
+            chave_pix TEXT NOT NULL,
+            nome TEXT NOT NULL,
+            cidade TEXT NOT NULL
+        )
+    """)
+
     conn.commit()
     conn.close()

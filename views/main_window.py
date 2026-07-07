@@ -3,7 +3,9 @@ from views.dashboard_view import Dashboard
 from views.clientes_view import Clientes
 from views.joias_view import Joias
 from views.relatorio_view import Relatorio
+from views.cadastros_view import Cadastros
 from views.vendas_view import Vendas
+from views.config_view import Config
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import Qt
 
@@ -14,14 +16,16 @@ class MainWindow(QMainWindow): #cria a classe da janela principal, com todos seu
         self.setFixedSize(800,600)
         logo = QLabel()
         pixmap = QPixmap("images/logo.png")
-        logo.setPixmap(pixmap.scaled(150, 150, Qt.AspectRatioMode.KeepAspectRatio))
+        logo.setPixmap(pixmap.scaled(150, 150, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
         logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.label_sidebar = QLabel("Menu")
         self.label_sidebar.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.pushbutton_clientes = QPushButton("Cadastrar Clientes") 
-        self.pushbutton_joias = QPushButton("Cadastrar Joias")
-        self.pushbutton_vendas = QPushButton("Registrar Vendas")
-        self.pushbutton_relatorio = QPushButton("Visualizar Vendas")
+        self.pushbutton_clientes = QPushButton("Clientes") 
+        self.pushbutton_joias = QPushButton("Joias")
+        self.pushbutton_vendas = QPushButton("Vendas")
+        self.pushbutton_cadastros = QPushButton("Cadastros")
+        self.pushbutton_relatorio = QPushButton("Relatórios")
+        self.pushbutton_cfg = QPushButton("Configurações")
         self.label_conteudo = QLabel("Conteúdo")
         layout_principal = QHBoxLayout()
         widget_principal = QWidget()
@@ -30,7 +34,9 @@ class MainWindow(QMainWindow): #cria a classe da janela principal, com todos seu
         layout_sidebar.addWidget(self.pushbutton_clientes)
         layout_sidebar.addWidget(self.pushbutton_joias)
         layout_sidebar.addWidget(self.pushbutton_vendas)
+        layout_sidebar.addWidget(self.pushbutton_cadastros)
         layout_sidebar.addWidget(self.pushbutton_relatorio)
+        layout_sidebar.addWidget(self.pushbutton_cfg)
         layout_sidebar.addStretch()
         layout_sidebar.addWidget(logo)
         widget_sidebar.setLayout(layout_sidebar)
@@ -39,7 +45,9 @@ class MainWindow(QMainWindow): #cria a classe da janela principal, com todos seu
         self.stack.addWidget(Clientes())
         self.stack.addWidget(Joias())
         self.stack.addWidget(Vendas())
+        self.stack.addWidget(Cadastros())
         self.stack.addWidget(Relatorio())
+        self.stack.addWidget(Config())
 
         layout_principal.addWidget(widget_sidebar)
         layout_principal.addWidget(self.stack)
@@ -50,7 +58,9 @@ class MainWindow(QMainWindow): #cria a classe da janela principal, com todos seu
         self.pushbutton_clientes.clicked.connect(lambda: self.abrir_pagina(0))
         self.pushbutton_joias.clicked.connect(lambda: self.abrir_pagina(1))
         self.pushbutton_vendas.clicked.connect(lambda: self.abrir_pagina(2))
-        self.pushbutton_relatorio.clicked.connect(lambda: self.abrir_pagina(3))
+        self.pushbutton_cadastros.clicked.connect(lambda: self.abrir_pagina(3))
+        self.pushbutton_relatorio.clicked.connect(lambda: self.abrir_pagina(4))
+        self.pushbutton_cfg.clicked.connect(lambda: self.abrir_pagina(5))
 
     def abrir_pagina(self, indice):
         self.stack.setCurrentIndex(indice)

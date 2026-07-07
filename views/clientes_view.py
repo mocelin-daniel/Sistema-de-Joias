@@ -1,13 +1,15 @@
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox, QTableWidget, QTableWidgetItem, QHBoxLayout
 from database.db import get_connection
 import sqlite3
+from PyQt6.QtWidgets import QHeaderView
+from PyQt6.QtWidgets import QAbstractItemView
 
 class Clientes(QWidget):
     def __init__(self):
         super().__init__()
         layout = QVBoxLayout()
         layout_h = QHBoxLayout()
-        layout.addWidget(QLabel("Cadastrar novos clientes!"))
+        layout.addWidget(QLabel("Cadastrar Clientes"))
         label_nome = QLabel("Nome: ")
         self.campo_nome = QLineEdit()
         label_cpf = QLabel("CPF: ")
@@ -28,8 +30,8 @@ class Clientes(QWidget):
         self.tabela.setHorizontalHeaderLabels(["ID", "Nome", "CPF", "Número", "Email", "Endereço"])
         self.tabela.setColumnHidden(0, True)
         self.id_editando = None
-        self.tabela.cellClicked.connect(self.selecionar_cliente)
 
+        self.tabela.cellClicked.connect(self.selecionar_cliente)
         self.salvar.clicked.connect(self.salvar_cliente)
         self.limpar.clicked.connect(self.limpar_campos)
         self.excluir.clicked.connect(self.excluir_cliente)
@@ -51,16 +53,18 @@ class Clientes(QWidget):
         layout_h.addWidget(self.excluir)
         layout.addLayout(layout_h)
         layout.addWidget(self.tabela)
+        self.tabela.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.tabela.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.carregar_clientes()
         self.setLayout(layout)
 
 
     def salvar_cliente(self):
-        nome = self.campo_nome.text().upper()
+        nome = self.campo_nome.text().title()
         cpf = self.campo_cpf.text()
         numero = self.campo_numero.text()
         email = self.campo_email.text()
-        endereco = self.campo_endereco.text().upper()
+        endereco = self.campo_endereco.text().title()
         if not nome or not cpf or not numero or not email or not endereco:
             QMessageBox.warning(self,"Atenção", "Por favor, preencha todos os campos!")
             return
@@ -100,6 +104,7 @@ class Clientes(QWidget):
         self.campo_email.clear()
         self.campo_endereco.clear()
         self.id_editando = None
+        self.tabela.setCurrentCell(-1, -1)
 
     def carregar_clientes(self):
         conn = get_connection()

@@ -1,43 +1,62 @@
+# Importações dos widgets PyQt6 e bibliotecas necessárias
 from PyQt6.QtWidgets import QVBoxLayout, QWidget, QLabel, QComboBox, QPushButton, QTableWidget, QHBoxLayout, QLineEdit, QTableWidgetItem
 from datetime import datetime
 from database.db import get_connection
+from PyQt6.QtWidgets import QHeaderView
+from PyQt6.QtWidgets import QAbstractItemView
 
 class Relatorio(QWidget):
     def __init__(self):
         super().__init__()
         layout = QVBoxLayout()
-        layout.addWidget(QLabel("Relatório de vendas!"))
+        layout.addWidget(QLabel("Relatório de Vendas"))
+
+        # layout horizontal para os filtros ficarem lado a lado
         layout_filtros = QHBoxLayout()
         layout.addLayout(layout_filtros)
+
+        # === FILTROS ===
         self.label_mes = QLabel("Mês:")
         self.combo_mes = QComboBox()
         self.combo_mes.addItem("Todos", 0)
         self.combo_mes.addItems(["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
                                  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"])
+
         self.label_ano = QLabel("Ano:")
-        self.combo_ano = QComboBox()
+        self.combo_ano = QComboBox()  # populado dinamicamente com os últimos 4 anos
+
         self.label_cliente = QLabel("Cliente:")
-        self.combo_cliente = QComboBox()
-        self.label_joia = QLabel("Jóia")
-        self.combo_joia = QComboBox()
+        self.combo_cliente = QComboBox()  # populado com clientes do banco
+
+        self.label_joia = QLabel("Joia")
+        self.combo_joia = QComboBox()  # populado com joias do banco
+
         self.label_pagamento = QLabel("Pagamento:")
         self.combo_pagamento = QComboBox()
         self.combo_pagamento.addItem("Todos", 0)
         self.combo_pagamento.addItems(["Débito", "Crédito", "Pix", "Dinheiro"])
+
         self.filtrar = QPushButton("Filtrar")
+
+        # === CAMPOS DE RESUMO ===
         self.total_vendas = QLabel("Total de Vendas:")
         self.campo_vendas = QLineEdit()
-        self.campo_vendas.setReadOnly(True)
+        self.campo_vendas.setReadOnly(True)  # calculado automaticamente
+
         self.faturamento = QLabel("Faturamento:")
         self.campo_faturamento = QLineEdit()
-        self.campo_faturamento.setReadOnly(True)
+        self.campo_faturamento.setReadOnly(True)  # calculado automaticamente
+
+        # === TABELA DE RESULTADOS ===
         self.tabela = QTableWidget()
         self.tabela.setColumnCount(7)
         self.tabela.setHorizontalHeaderLabels(["ID", "Cliente", "Joia", "Quantidade", "Total", "Pagamento", "Data"])
-        self.tabela.setColumnHidden(0, True)
+        self.tabela.setColumnHidden(0, True)  # oculta o ID
 
+        # conecta o botão filtrar ao método
         self.filtrar.clicked.connect(self.filtrar_vendas)
 
+        # adiciona os filtros ao layout horizontal
         layout_filtros.addWidget(self.label_mes)
         layout_filtros.addWidget(self.combo_mes)
         layout_filtros.addWidget(self.label_ano)
@@ -48,24 +67,30 @@ class Relatorio(QWidget):
         layout_filtros.addWidget(self.combo_joia)
         layout_filtros.addWidget(self.label_pagamento)
         layout_filtros.addWidget(self.combo_pagamento)
-        
+
+        # adiciona os demais elementos ao layout principal
         layout.addWidget(self.filtrar)
         layout.addWidget(self.total_vendas)
         layout.addWidget(self.campo_vendas)
         layout.addWidget(self.faturamento)
         layout.addWidget(self.campo_faturamento)
         layout.addWidget(self.tabela)
+        self.tabela.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.tabela.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.setLayout(layout)
 
+        # carrega clientes e joias nos filtros
         self.carregar_clientes()
         self.carregar_joias()
 
+        # popula o ComboBox de anos com o ano atual e os 3 anteriores
         ano_atual = datetime.now().year
         self.combo_ano.addItem("Todos", 0)
         for ano in range(ano_atual, ano_atual - 4, -1):
             self.combo_ano.addItem(str(ano), ano)
 
     def carregar_joias(self):
+        """Busca todas as joias do banco e popula o filtro"""
         self.combo_joia.addItem("Todos", 0)
         conn = get_connection()
         cursor = conn.cursor()
@@ -76,6 +101,7 @@ class Relatorio(QWidget):
             self.combo_joia.addItem(joia["nome"], joia["id"])
 
     def carregar_clientes(self):
+        """Busca todos os clientes do banco e popula o filtro"""
         self.combo_cliente.addItem("Todos", 0)
         conn = get_connection()
         cursor = conn.cursor()
@@ -86,6 +112,9 @@ class Relatorio(QWidget):
             self.combo_cliente.addItem(cliente["nome"], cliente["id"])
 
     def filtrar_vendas(self):
+        """Filtra as vendas com base nos filtros selecionados e exibe na tabela"""
+
+        # query base com JOIN para trazer nome do cliente e da joia
         query = """
         SELECT v.id, c.nome as nome_cliente, j.nome as nome_joia, 
             v.quantidade, v.valor_total, v.pagamento, v.data_venda
@@ -96,27 +125,31 @@ class Relatorio(QWidget):
         """
         parametros = []
 
-        # se cliente não for "Todos"
+        # adiciona filtro de cliente se não for "Todos"
         id_cliente = self.combo_cliente.currentData()
         if id_cliente != 0:
             query += " AND v.cliente_id = ?"
             parametros.append(id_cliente)
 
+        # adiciona filtro de joia se não for "Todos"
         id_joia = self.combo_joia.currentData()
         if id_joia != 0:
             query += " AND v.joia_id = ?"
             parametros.append(id_joia)
 
+        # adiciona filtro de pagamento se não for "Todos"
         pagamento = self.combo_pagamento.currentText()
         if pagamento != "Todos":
             query += " AND v.pagamento = ?"
             parametros.append(pagamento)
 
-        mes = self.combo_mes.currentIndex()  # 0 = Todos, 1 = Janeiro, etc
+        # adiciona filtro de mês (índice 0 = Todos, 1 = Janeiro...)
+        mes = self.combo_mes.currentIndex()
         if mes != 0:
             query += " AND strftime('%m', v.data_venda) = ?"
-            parametros.append(f"{mes:02d}")  # formata como "01", "02"...
+            parametros.append(f"{mes:02d}")
 
+        # adiciona filtro de ano se não for "Todos"
         ano = self.combo_ano.currentData()
         if ano != 0:
             query += " AND strftime('%Y', v.data_venda) = ?"
@@ -127,11 +160,14 @@ class Relatorio(QWidget):
         cursor.execute(query, parametros)
         vendas = cursor.fetchall()
         self.tabela.setRowCount(len(vendas))
+
+        # calcula e exibe o resumo
         total = len(vendas)
         faturamento = sum(venda["valor_total"] for venda in vendas)
         self.campo_vendas.setText(str(total))
         self.campo_faturamento.setText(f"R$ {faturamento:.2f}")
 
+        # preenche a tabela com os resultados
         for i, venda in enumerate(vendas):
             self.tabela.setItem(i, 0, QTableWidgetItem(str(venda["id"])))
             self.tabela.setItem(i, 1, QTableWidgetItem(venda["nome_cliente"]))
@@ -139,12 +175,14 @@ class Relatorio(QWidget):
             self.tabela.setItem(i, 3, QTableWidgetItem(str(venda["quantidade"])))
             self.tabela.setItem(i, 4, QTableWidgetItem(f"R$ {venda['valor_total']:.2f}"))
             self.tabela.setItem(i, 5, QTableWidgetItem(str(venda["pagamento"])))
+            # formata a data do padrão americano para o brasileiro
             data_formatada = datetime.strptime(venda["data_venda"], "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y %H:%M")
             self.tabela.setItem(i, 6, QTableWidgetItem(data_formatada))
-        
+
         conn.close()
 
     def atualizar(self):
+        """Recarrega os filtros de clientes e joias"""
         self.combo_cliente.clear()
         self.combo_joia.clear()
         self.carregar_clientes()

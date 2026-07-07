@@ -1,19 +1,20 @@
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox, QTableWidget, QTableWidgetItem, QComboBox, QHBoxLayout
 from database.db import get_connection
+from PyQt6.QtWidgets import QHeaderView
+from PyQt6.QtWidgets import QAbstractItemView
 
 class Joias(QWidget):
     def __init__(self):
         super().__init__()
         layout = QVBoxLayout()
         layout_h = QHBoxLayout()
-        layout.addWidget(QLabel("Cadastrar novas joias!"))
+        layout.addWidget(QLabel("Cadastrar Joias"))
         label_nome = QLabel("Nome: ")
         self.campo_nome = QLineEdit()
         label_tipo = QLabel("Tipo: ")
-        self.campo_tipo = QLineEdit()
+        self.combo_tipo = QComboBox()
         label_material = QLabel("Material: ")
-        self.campo_material = QComboBox()
-        self.campo_material.addItems(["Ouro", "Prata", "Aço", "Bronze", "Platina", "Outro"])
+        self.combo_material = QComboBox()
         label_quantidade = QLabel("Quantidade: ")
         self.campo_quantidade = QLineEdit()
         label_valor = QLabel("Preço: R$")
@@ -29,8 +30,8 @@ class Joias(QWidget):
         self.tabela.setHorizontalHeaderLabels(["ID", "Nome", "Tipo", "Material", "Quantidade", "Valor"])
         self.tabela.setColumnHidden(0, True)
         self.id_editando = None
+        
         self.tabela.cellClicked.connect(self.selecionar_joia)
-
         self.salvar.clicked.connect(self.salvar_joia)
         self.limpar.clicked.connect(self.limpar_campos)
         self.excluir.clicked.connect(self.excluir_joia)
@@ -38,9 +39,9 @@ class Joias(QWidget):
         layout.addWidget(label_nome)
         layout.addWidget(self.campo_nome)
         layout.addWidget(label_tipo)
-        layout.addWidget(self.campo_tipo)
+        layout.addWidget(self.combo_tipo)
         layout.addWidget(label_material)
-        layout.addWidget(self.campo_material)
+        layout.addWidget(self.combo_material)
         layout.addWidget(label_quantidade)
         layout.addWidget(self.campo_quantidade)
         layout.addWidget(label_valor)
@@ -52,13 +53,36 @@ class Joias(QWidget):
         layout_h.addWidget(self.excluir)
         layout.addLayout(layout_h)
         layout.addWidget(self.tabela)
+        self.tabela.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.tabela.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.carregar_joias()
         self.setLayout(layout)
 
+        self.carregar_tipo()
+        self.carregar_material()
+
+    def carregar_tipo(self):
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, tipo FROM tipos")
+        tipos = cursor.fetchall()
+        conn.close()
+        for tipos in tipos:
+            self.combo_tipo.addItem(tipos["tipo"], tipos["id"])
+
+    def carregar_material(self):
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, material FROM material")
+        material = cursor.fetchall()
+        conn.close()
+        for material in material:
+            self.combo_material.addItem(material["material"], material["id"])
+
     def salvar_joia(self):
-        nome = self.campo_nome.text().upper()
-        tipo = self.campo_tipo.text().upper()
-        material = self.campo_material.currentText()
+        nome = self.campo_nome.text().title()
+        tipo = self.combo_tipo.currentText()
+        material = self.combo_material.currentText()
         quantidade = self.campo_quantidade.text()
         valor = self.campo_valor.text().replace(",", ".")
         descricao = self.campo_descricao.text()
@@ -77,9 +101,7 @@ class Joias(QWidget):
         conn = get_connection()
         cursor = conn.cursor()
 
-        if self.id_editando is None:
-            # verifica nome duplicado só no cadastro novo
-            cursor.execute("SELECT id FROM joias WHERE nome = ?", (nome,))
+        # verifica nome duplicado só no cadastro novo
         if self.id_editando is None:
             cursor.execute("SELECT id FROM joias WHERE nome = ?", (nome,))
             if cursor.fetchone():
@@ -114,13 +136,14 @@ class Joias(QWidget):
 
     def limpar_campos(self):
         self.campo_nome.clear()
-        self.campo_tipo.clear()
-        self.campo_material.setCurrentIndex(0)
+        self.combo_tipo.setCurrentIndex(0)
+        self.combo_material.setCurrentIndex(0)
         self.campo_quantidade.clear()
         self.campo_valor.clear()
         self.campo_descricao.clear()
         self.id_editando = None
-
+        self.tabela.setCurrentCell(-1, -1)
+        
     def carregar_joias(self):
         conn = get_connection()
         cursor = conn.cursor()
@@ -151,6 +174,7 @@ class Joias(QWidget):
         if resultado["total"] > 0:
             QMessageBox.warning(self, "Atenção", 
                 f"Essa joia possui {resultado['total']} venda(s) registrada(s) e não pode ser excluída!")
+            conn.close()
             return
         
         msg = QMessageBox()
@@ -164,23 +188,26 @@ class Joias(QWidget):
         if resposta == QMessageBox.StandardButton.No:
             return
         id_joia = self.tabela.item(linha, 0).text()
-        conn = get_connection()
-        cursor = conn.cursor()
         cursor.execute("DELETE FROM joias WHERE id = ?", (id_joia,))
         QMessageBox.information(self, "Atenção", "Joia deletada com sucesso!")
         conn.commit()
         conn.close()
         self.carregar_joias()
         self.limpar_campos()
+        self.id_editando = None
 
     def selecionar_joia(self, linha, coluna):
         self.campo_nome.setText(self.tabela.item(linha, 1).text())
-        self.campo_tipo.setText(self.tabela.item(linha, 2).text())
-        self.campo_material.setCurrentText(self.tabela.item(linha, 3).text())
+        self.combo_tipo.setCurrentText(self.tabela.item(linha, 2).text())
+        self.combo_material.setCurrentText(self.tabela.item(linha, 3).text())
         self.campo_quantidade.setText(self.tabela.item(linha, 4).text())
         valor = self.tabela.item(linha, 5).text().replace("R$ ", "")
         self.campo_valor.setText(valor)
         self.id_editando = self.tabela.item(linha, 0).text()
     
     def atualizar(self):
+        self.combo_tipo.clear()
+        self.combo_material.clear()
+        self.carregar_tipo()
+        self.carregar_material()
         self.carregar_joias()
