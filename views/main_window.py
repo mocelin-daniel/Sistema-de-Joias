@@ -8,7 +8,7 @@ from views.vendas_view import Vendas
 from views.config_view import Config
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import Qt
-import os
+from utils import resource_path
 
 class MainWindow(QMainWindow): #cria a classe da janela principal, com todos seus botões e layout
     def __init__(self):
@@ -16,8 +16,7 @@ class MainWindow(QMainWindow): #cria a classe da janela principal, com todos seu
         layout_sidebar = QVBoxLayout()
         self.setFixedSize(800,600)
         logo = QLabel()
-        BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        logo_path = os.path.join(BASE_DIR, "images", "logo.png")
+        logo_path = resource_path("images/logo.png")
         pixmap = QPixmap(logo_path)
         logo.setPixmap(pixmap.scaled(150, 150, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
         logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
