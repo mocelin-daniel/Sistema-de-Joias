@@ -1,3 +1,4 @@
+# Importações dos widgets PyQt6 e bibliotecas necessárias
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox, QTableWidget, QTableWidgetItem, QHBoxLayout
 from database.db import get_connection
 import sqlite3
@@ -8,8 +9,10 @@ class Clientes(QWidget):
     def __init__(self):
         super().__init__()
         layout = QVBoxLayout()
-        layout_h = QHBoxLayout()
+        layout_h = QHBoxLayout()  # layout horizontal para os botões
         layout.addWidget(QLabel("Cadastrar Clientes"))
+
+        # campos do formulário
         label_nome = QLabel("Nome: ")
         self.campo_nome = QLineEdit()
         label_cpf = QLabel("CPF: ")
@@ -22,15 +25,20 @@ class Clientes(QWidget):
         self.campo_email = QLineEdit()
         label_endereco = QLabel("Endereço: (Bairro, Rua, Número)")
         self.campo_endereco = QLineEdit()
+
+        # botões de ação
         self.salvar = QPushButton("Salvar")
         self.limpar = QPushButton("Limpar")
         self.excluir = QPushButton("Excluir")
+
+        # tabela de listagem dos clientes cadastrados
         self.tabela = QTableWidget()
         self.tabela.setColumnCount(6)
         self.tabela.setHorizontalHeaderLabels(["ID", "Nome", "CPF", "Número", "Email", "Endereço"])
-        self.tabela.setColumnHidden(0, True)
-        self.id_editando = None
+        self.tabela.setColumnHidden(0, True)  # oculta coluna ID
+        self.id_editando = None  # guarda o id do cliente sendo editado (None = novo cadastro)
 
+        # conexões dos sinais aos métodos
         self.tabela.cellClicked.connect(self.selecionar_cliente)
         self.salvar.clicked.connect(self.salvar_cliente)
         self.limpar.clicked.connect(self.limpar_campos)
@@ -38,6 +46,7 @@ class Clientes(QWidget):
         self.campo_cpf.textChanged.connect(self.formatar_cpf)
         self.campo_numero.textChanged.connect(self.formatar_numero)
 
+        # adição dos widgets ao layout
         layout.addWidget(label_nome)
         layout.addWidget(self.campo_nome)
         layout.addWidget(label_cpf)
@@ -53,22 +62,25 @@ class Clientes(QWidget):
         layout_h.addWidget(self.excluir)
         layout.addLayout(layout_h)
         layout.addWidget(self.tabela)
-        self.tabela.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        self.tabela.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.tabela.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)  # impede edição direta na tabela
+        self.tabela.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)  # colunas preenchem a largura
         self.carregar_clientes()
         self.setLayout(layout)
 
-
     def salvar_cliente(self):
+        """Salva ou atualiza um cliente no banco de dados"""
         nome = self.campo_nome.text().title()
         cpf = self.campo_cpf.text()
         numero = self.campo_numero.text()
         email = self.campo_email.text()
         endereco = self.campo_endereco.text().title()
+
+        # valida campos obrigatórios
         if not nome or not cpf or not numero or not email or not endereco:
             QMessageBox.warning(self,"Atenção", "Por favor, preencha todos os campos!")
             return
 
+        # valida tamanho do CPF
         if len(cpf.replace(".", "").replace("-", "")) != 11:
             QMessageBox.warning(self, "Atenção", "CPF inválido!")
             return
@@ -77,17 +89,20 @@ class Clientes(QWidget):
         cursor = conn.cursor()
         try:
             if self.id_editando is None:
+                # novo cadastro
                 cursor.execute("""
                     INSERT INTO clientes (nome, cpf, numero, email, endereco)
                     VALUES (?, ?, ?, ?, ?)
                 """, (nome, cpf, numero, email, endereco))
             else:
+                # atualiza cadastro existente
                 cursor.execute("""
                     UPDATE clientes SET nome=?, cpf=?, numero=?, email=?, endereco=?
                     WHERE id=?
                 """, (nome, cpf, numero, email, endereco, self.id_editando))
             conn.commit()
         except sqlite3.IntegrityError:
+            # impede CPF duplicado
             QMessageBox.warning(self, "Atenção", "CPF já cadastrado!")
             conn.close()
             return
@@ -98,15 +113,17 @@ class Clientes(QWidget):
         self.carregar_clientes()
 
     def limpar_campos(self):
+        """Limpa os campos do formulário e desfaz a seleção da tabela"""
         self.campo_nome.clear()
         self.campo_cpf.clear()
         self.campo_numero.clear()
         self.campo_email.clear()
         self.campo_endereco.clear()
         self.id_editando = None
-        self.tabela.setCurrentCell(-1, -1)
+        self.tabela.setCurrentCell(-1, -1)  # desfaz seleção da tabela
 
     def carregar_clientes(self):
+        """Busca todos os clientes do banco e preenche a tabela"""
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT id, nome, cpf, numero, email, endereco FROM clientes")
@@ -122,15 +139,17 @@ class Clientes(QWidget):
             self.tabela.setItem(i, 5, QTableWidgetItem(cliente["endereco"]))
 
     def excluir_cliente(self):
+        """Exclui o cliente selecionado após validações e confirmação"""
         linha = self.tabela.currentRow()
         if linha == -1:
             QMessageBox.warning(self, "Atenção", "Selecione um cliente para excluir!")
             return
         
-        id_cliente = self.tabela.item(linha, 0).text()  # pega o id primeiro
-        conn = get_connection()                        # abre conexão
-        cursor = conn.cursor()                         # cria cursor
+        id_cliente = self.tabela.item(linha, 0).text()
+        conn = get_connection()
+        cursor = conn.cursor()
         
+        # bloqueia exclusão se o cliente tiver vendas registradas
         cursor.execute("SELECT COUNT(*) as total FROM vendas WHERE cliente_id = ?", (id_cliente,))
         resultado = cursor.fetchone()
         if resultado["total"] > 0:
@@ -139,6 +158,7 @@ class Clientes(QWidget):
             conn.close()
             return
 
+        # confirmação antes de excluir
         msg = QMessageBox()
         msg.setWindowTitle("Confirmar exclusão")
         msg.setText("Tem certeza que deseja excluir o cliente selecionado?")
@@ -157,6 +177,7 @@ class Clientes(QWidget):
         self.limpar_campos()
         
     def selecionar_cliente(self, linha, coluna):
+        """Preenche o formulário com os dados da linha clicada na tabela"""
         self.campo_nome.setText(self.tabela.item(linha, 1).text())
         self.campo_cpf.setText(self.tabela.item(linha, 2).text())
         self.campo_numero.setText(self.tabela.item(linha, 3).text())
@@ -165,13 +186,12 @@ class Clientes(QWidget):
         self.id_editando = self.tabela.item(linha, 0).text()
 
     def formatar_cpf(self, texto):
+        """Formata o CPF automaticamente enquanto o usuário digita"""
         numeros = ''.join(filter(str.isdigit, texto))
         
-        # limita a 11 dígitos
         if len(numeros) > 11:
             numeros = numeros[:11]
         
-        # formata conforme vai digitando
         if len(numeros) <= 3:
             formatado = numeros
         elif len(numeros) <= 6:
@@ -181,18 +201,18 @@ class Clientes(QWidget):
         else:
             formatado = f"{numeros[:3]}.{numeros[3:6]}.{numeros[6:9]}-{numeros[9:]}"
         
+        # bloqueia o sinal para evitar loop infinito ao atualizar o campo
         self.campo_cpf.blockSignals(True)
         self.campo_cpf.setText(formatado)
         self.campo_cpf.blockSignals(False)
 
     def formatar_numero(self, texto):
+        """Formata o número de telefone automaticamente enquanto o usuário digita"""
         numeros = ''.join(filter(str.isdigit, texto))
         
-        # limita a 11 dígitos
         if len(numeros) > 11:
             numeros = numeros[:11]
         
-        # formata conforme vai digitando
         if len(numeros) <= 2:
             formatado = f"{numeros}"
         elif len(numeros) <= 7:
@@ -200,6 +220,7 @@ class Clientes(QWidget):
         elif len(numeros) <= 11:
             formatado = f"({numeros[:2]}) {numeros[2:7]}-{numeros[7:]}"
         
+        # bloqueia o sinal para evitar loop infinito ao atualizar o campo
         self.campo_numero.blockSignals(True)
         self.campo_numero.setText(formatado)
         self.campo_numero.blockSignals(False)

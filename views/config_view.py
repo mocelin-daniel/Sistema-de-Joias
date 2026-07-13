@@ -1,3 +1,4 @@
+# Importações dos widgets PyQt6 e bibliotecas necessárias
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox
 from database.db import get_connection
 
@@ -8,23 +9,30 @@ class Config(QWidget):
         layout = QVBoxLayout()
         layout.addWidget(QLabel("Configurações"))
         
-        # campos
+        # campos de configuração do Pix — iniciam ocultos por segurança
         label_chave = QLabel("Chave Pix: (Digite apenas os números)")
         self.campo_chave = QLineEdit()
-        self.campo_chave.setEchoMode(QLineEdit.EchoMode.Password)
+        self.campo_chave.setEchoMode(QLineEdit.EchoMode.Password)  # oculta o texto
+
         label_nome = QLabel("Nome Completo (Pix):")
         self.campo_nome = QLineEdit()
         self.campo_nome.setEchoMode(QLineEdit.EchoMode.Password)
+
         label_cidade = QLabel("Cidade:")
         self.campo_cidade = QLineEdit()
         self.campo_cidade.setEchoMode(QLineEdit.EchoMode.Password)
+
+        # botão para alternar visibilidade dos campos
         self.alterar = QPushButton("Exibir")
         self.alterar.clicked.connect(self.alterar_visibilidade_senha)
+
         self.salvar = QPushButton("Salvar")
         self.salvar.clicked.connect(self.salvar_config)
 
+        # lista com todos os campos que terão visibilidade alternada
         self.lista_campos = [self.campo_chave, self.campo_cidade, self.campo_nome]
         
+        # adição dos widgets ao layout
         layout.addWidget(label_chave)
         layout.addWidget(self.campo_chave)
         layout.addWidget(label_nome)
@@ -35,9 +43,12 @@ class Config(QWidget):
         layout.addWidget(self.alterar)
         layout.addStretch()
         self.setLayout(layout)
+
+        # carrega as configurações salvas ao iniciar a tela
         self.carregar_config()
 
     def salvar_config(self):
+        """Salva ou atualiza as configurações do Pix no banco de dados"""
         chave = self.campo_chave.text().strip()
         nome = self.campo_nome.text().title()
         cidade = self.campo_cidade.text().title()
@@ -49,16 +60,18 @@ class Config(QWidget):
         conn = get_connection()
         cursor = conn.cursor()
 
+        # INSERT OR REPLACE com id=1 garante que sempre existe só uma configuração
         cursor.execute("""
             INSERT OR REPLACE INTO configs(id, chave_pix, nome, cidade)
             VALUES(1, ?, ?, ?)
-        """,(chave, nome, cidade))
+        """, (chave, nome, cidade))
 
         conn.commit()
         conn.close()
         QMessageBox.information(self, "Sucesso", "Dados PIX Salvos.")
 
     def carregar_config(self):
+        """Busca as configurações salvas no banco e preenche os campos"""
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT chave_pix, nome, cidade FROM configs WHERE id=1")
@@ -70,13 +83,15 @@ class Config(QWidget):
             self.campo_cidade.setText(config["cidade"])
 
     def alterar_visibilidade_senha(self):
+        """Alterna a visibilidade dos campos entre oculto e visível"""
         if self.campo_nome.echoMode() == QLineEdit.EchoMode.Password:
             toggle = QLineEdit.EchoMode.Normal
-            text_toggle = ("Ocultar")
+            text_toggle = "Ocultar"
         else:
             toggle = QLineEdit.EchoMode.Password
-            text_toggle = ("Exibir")
+            text_toggle = "Exibir"
 
+        # aplica o modo em todos os campos da lista
         for campo in self.lista_campos:
             campo.setEchoMode(toggle)
-            self.alterar.setText(text_toggle)
+        self.alterar.setText(text_toggle)
