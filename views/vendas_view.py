@@ -143,12 +143,12 @@ class Vendas(QWidget):
         """Busca joias com estoque disponível e popula o ComboBox"""
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT id, nome, valor, material FROM joias WHERE quantidade > 0")
+        cursor.execute("SELECT id, nome, valor, material, tipo FROM joias WHERE quantidade > 0")
         joias = cursor.fetchall()
         conn.close()
         for joia in joias:
             # exibe nome e material para diferenciar joias com mesmo nome
-            self.combo_joia.addItem(f"{joia['nome']} - {joia['material']}", joia['id'])
+            self.combo_joia.addItem(f"{joia['nome']} - {joia['tipo']} - {joia['material']}", joia['id'])
 
     def preencher_cliente(self):
         """Preenche CPF e telefone automaticamente ao selecionar um cliente"""
@@ -218,17 +218,6 @@ class Vendas(QWidget):
             conn.close()
             return
 
-        # insere a venda no banco
-        cursor.execute("""
-            INSERT INTO vendas (cliente_id, joia_id, valor_joia, quantidade, valor_total, pagamento)
-            VALUES (?, ?, ?, ?, ?, ?)""",
-            (id_cliente, id_joia, valor_joias, quantidade, valor_total, pagamento))
-
-        # atualiza o estoque da joia
-        cursor.execute("UPDATE joias SET quantidade = quantidade - ? WHERE id = ?", (quantidade, id_joia))
-        conn.commit()
-        conn.close()
-
         # se o pagamento for Pix, oferece geração do QR Code
         if pagamento == "Pix":
             conn_cfg = get_connection()
@@ -273,6 +262,17 @@ class Vendas(QWidget):
                 label_qr.setPixmap(pixmap.scaled(200, 200, Qt.AspectRatioMode.KeepAspectRatio))
                 msg.layout().addWidget(label_qr, 1, 0, 1, msg.layout().columnCount())
                 msg.exec()
+
+        # insere a venda no banco
+        cursor.execute("""
+            INSERT INTO vendas (cliente_id, joia_id, valor_joia, quantidade, valor_total, pagamento)
+            VALUES (?, ?, ?, ?, ?, ?)""",
+            (id_cliente, id_joia, valor_joias, quantidade, valor_total, pagamento))
+
+        # atualiza o estoque da joia
+        cursor.execute("UPDATE joias SET quantidade = quantidade - ? WHERE id = ?", (quantidade, id_joia))
+        conn.commit()
+        conn.close()
 
         QMessageBox.information(self, "Atenção!", "Venda registrada com sucesso!")
         self.atualizar()

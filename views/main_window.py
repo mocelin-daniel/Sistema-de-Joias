@@ -1,5 +1,4 @@
 from PyQt6.QtWidgets import QVBoxLayout, QWidget, QLabel, QMainWindow, QHBoxLayout, QPushButton, QStackedWidget
-from views.dashboard_view import Dashboard
 from views.clientes_view import Clientes
 from views.joias_view import Joias
 from views.relatorio_view import Relatorio

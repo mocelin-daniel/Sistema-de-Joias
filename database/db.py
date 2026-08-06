@@ -1,8 +1,19 @@
 import sqlite3
 import os
+import sys
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DB_PATH = os.path.join(BASE_DIR, "joias.db")
+
+if hasattr(sys, '_MEIPASS'):
+    BASE_DIR = os.path.dirname(sys.executable)
+else:
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# cria a pasta database se não existir
+DB_DIR = os.path.join(BASE_DIR, "database")
+os.makedirs(DB_DIR, exist_ok=True)
+
+DB_PATH = os.path.join(DB_DIR, "joias.db")
 
 def get_connection():
     conn = sqlite3.connect(DB_PATH)

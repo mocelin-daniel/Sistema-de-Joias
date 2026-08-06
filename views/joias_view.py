@@ -12,7 +12,7 @@ class Joias(QWidget):
         layout.addWidget(QLabel("Cadastrar Joias"))
 
         # campos do formulário
-        label_nome = QLabel("Nome: ")
+        label_nome = QLabel("Código: ")
         self.campo_nome = QLineEdit()
         label_tipo = QLabel("Tipo: ")
         self.combo_tipo = QComboBox()  # populado dinamicamente do banco
@@ -33,7 +33,7 @@ class Joias(QWidget):
         # tabela de listagem das joias cadastradas
         self.tabela = QTableWidget()
         self.tabela.setColumnCount(6)
-        self.tabela.setHorizontalHeaderLabels(["ID", "Nome", "Tipo", "Material", "Quantidade", "Valor"])
+        self.tabela.setHorizontalHeaderLabels(["ID", "Código", "Tipo", "Material", "Quantidade", "Valor"])
         self.tabela.setColumnHidden(0, True)  # oculta coluna ID
         self.id_editando = None  # guarda o id da joia sendo editada (None = novo cadastro)
         
